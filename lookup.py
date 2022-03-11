@@ -18,12 +18,6 @@ def api_call(api_key, start, limit):
     api = url+api_key+params
     return api
 
-api_request = requests.get(api_call(api_key, 1, 5000))
-
-api = json.loads(api_request.content)
-
-data = api['data']
-
 def red_green(amount):
     if amount >= 0:
         return "green"
@@ -38,6 +32,7 @@ root.iconbitmap(r'C:\\Users\\moona\\Desktop\\logo-_2_.ico')
 name = Label(root, text='Ian Moore', bg = 'white')
 name.grid(row=0, column=0, sticky = N+S+E+W)
 
+
 ## create header ##
 header = ['Name', 'Rank', 'Current Price', 'Price Paid', 'P\L Per', '1-Hour Change', '24-Hour Change', 
          '7-Day Change', 'Current Value', 'P\L Total']
@@ -51,10 +46,10 @@ for i in header:
         header_name = Label(root, text= i, bg='silver', font= 'Verdana 8 bold')
         header_name.grid(row=0, column = col, sticky= N+S+E+W)
 
-
 def lookup():
-    #api_request = requests.get(api_call(api_key, 1, 5000))
-    #api = json.loads(api_request.content)
+    api_request = requests.get(api_call(api_key, 1, 5000))
+    api = json.loads(api_request.content)
+    data = api['data']
     
     my_portfolio = [
     {
@@ -80,6 +75,8 @@ def lookup():
     ]
     
     portfolio_profit_loss = 0
+    total_current_value = 0
+    
     row_count = 1
 
     for i in data:
@@ -104,16 +101,7 @@ def lookup():
                 profit_loss_per_coin = round(float(current_price) - float(price_paid), 2)
 
                 portfolio_profit_loss += profit_loss
-
-                print(name)                   
-                print(' Current Price: ${0:.2f}'.format(float(current_price)))
-                print(' Profit/Loss per Coin: ${0:.2f}'.format(float(profit_loss_per_coin)))
-                print(' Rank: {0:.0f}'.format(float(rank)))
-                print(' Total Paid: ${0:.2f}'.format(float(total_paid)))
-                print(' Current Value: ${0:.2f}'.format(float(current_value)))
-                print(' Profit/Loss: ${0:.2f}'.format(float(profit_loss)))
-                print('------------------------------')
-                
+                total_current_value += current_value
                 
                 column_data_1 = Label(root, text= name, bg='silver')
                 column_data_1.grid(row=row_count, column = 0, sticky= N+S+E+W)
@@ -147,8 +135,16 @@ def lookup():
                 
                 
                 row_count += 1
-
-    print('Total Profit/Loss: ${0:.2f}'.format(float(portfolio_profit_loss)))
+    
+    portfolio_profits = Label(root, text='Portfolio P/L: ${0:.2f}'.format(float(portfolio_profit_loss)), font= 'Verdana 8 bold', fg=red_green(portfolio_profit_loss)) 
+    portfolio_profits.grid(row=row_count, column = 0, sticky = W, padx=10, pady=10)
+    
+    #total_current_value_output = Label(root, text='Portfolio Current Value: ${0:.2f}'.format(float(total_current_value)), font= 'Verdana 8 bold', fg=red_green(total_current_value))
+    root.title('Crypto Currency Porfolio - Portfolio Current Value: ${0:.2f}'.format(float(total_current_value)))
+    #total_current_value_output.grid(row=row_count, column = 2, sticky = W, padx=10, pady=10)
+    
+    update_button = Button(root, text='Update Prices', command = lookup)
+    update_button.grid(row=row_count, column = 9, sticky=E+S, padx = 10, pady = 10)
 
 lookup()
 root.mainloop()
