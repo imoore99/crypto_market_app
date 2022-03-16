@@ -1,22 +1,26 @@
-
+###Run imports###
 import requests
 import json
 import random
 
 from tkinter import *
-import matplotlib.pyplot as plt  # May remove once configured
 
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.colors as clr
 
-import numpy as np
+###file holds api_key###
+from api_key import api_key
 
+###clears out console log###
 import os
 os.system('cls')
 
-api_key = '44a83c23-8fd2-4c20-abb2-fb2c0803e235'
+###Variable###
+path = 'data.json'  #json file path
 
+###functions###
+#api call
 def api_call(api_key, start, limit):
     url='https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest?CMC_PRO_API_KEY='
     params = '&start={start}&limit={limit}&convert=USD'.format(start=start, limit=limit)
@@ -24,61 +28,54 @@ def api_call(api_key, start, limit):
     api = url+api_key+params
     return api
 
-path = 'data.json'
-
+#red and green color coding for text based on profit and loss of total value
 def red_green(amount):
     if amount >= 0:
         return "green"
     else:
         return "red"
 
-def portfolio(path):    
-    json_file_path = path
-
-    with open(json_file_path, 'r') as j:
-         contents = json.loads(j.read())
-        
-    my_portfolio = list(contents)
-    return my_portfolio
-    
-def x_ticks(m):
+#creates x-tick range for "Current Value per Coin"
+def y_ticks(m):
     factor = 4
     maxy = round(max(m), -2)
 
     mm = maxy/factor
 
-    x_axis = []
+    y_axis = []
     i = 0
     while i <= factor:
-        x_label = mm * i
-        x_axis.append(int(x_label))
+        y_label = mm * i
+        y_axis.append(int(y_label))
         i = i + 1
-    return x_axis
+    return y_axis
 
-def x_ticks_pl(value):
+#creates x-tick range for "Current P/L per Coin"
+def y_ticks_pl(value):
     mn = round(min(value), -1)
     mx = round(max(value), -1)
 
-    x_ticks_pl = []
+    y_ticks_pl = []
 
     factor = 2
-
+#determines min range
     im = 1
     while im <= factor:
-        x_label_min = mn * im * 0.5
-        x_ticks_pl.append(int(x_label_min))
+        y_label_min = mn * im * 0.5
+        y_ticks_pl.append(int(y_label_min))
         im = im + 1
-
+#determines max range
     ix = 0
     while ix <= factor:
-        x_label = mx * ix * 0.5
-        x_ticks_pl.append(int(x_label))
+        y_label = mx * ix * 0.5
+        y_ticks_pl.append(int(y_label))
         ix = ix + 1
 
-    x_ticks_pl.sort()
+    y_ticks_pl.sort()
     
-    return x_ticks_pl
+    return y_ticks_pl
 
+#defines color range for charts
 def colors_defined(value):
     colors = []
 
@@ -95,7 +92,18 @@ def colors_defined(value):
             colors.append((.97, .5, .5, 1))
 
     return colors
-    
+
+#creates portfolio path to json file for reading ticker data
+def portfolio(path):    
+    json_file_path = path
+
+    with open(json_file_path, 'r') as j:
+         contents = json.loads(j.read())
+        
+    my_portfolio = list(contents)
+    return my_portfolio    
+
+###tkinter GUI setup###    
 root = Tk()
 
 root.iconbitmap(r'C:\\Users\\moona\\Desktop\\logo-_2_.ico')
@@ -104,6 +112,7 @@ root.iconbitmap(r'C:\\Users\\moona\\Desktop\\logo-_2_.ico')
 header = ['Name', 'Rank', 'Current Price', 'Price Paid', 'P\L Per', '1-Hour Change', '24-Hour Change', 
          '7-Day Change', 'Current Value', 'P\L Total']
 
+#creates header list and column coloring
 for i in header:
     col = header.index(i)
     if col % 2:
@@ -115,7 +124,7 @@ for i in header:
 
 
 
-
+### creates major load and update function for app###
 def lookup():
     api_request = requests.get(api_call(api_key, 1, 5000))
     api = json.loads(api_request.content)
@@ -127,6 +136,7 @@ def lookup():
     total_current_value = 0
     
     row_count = 2
+
     name_list = []
     sym_list = []
     size = []
@@ -136,7 +146,7 @@ def lookup():
         for coin in my_portfolio:
             if coin['sym'] == i['symbol']:
                 
-                # variables 
+                # data variables 
                 name = i['name']
                 rank = i['cmc_rank']
                 sym = i['symbol']
@@ -148,7 +158,7 @@ def lookup():
                 
                 amount_owned = coin['amount_owned']
                 
-                #run some calcs
+                #run some calcs with variables
                 total_paid = float(amount_owned)*(float(price_paid))
                 current_value = round(float(amount_owned)*float(current_price), 2)
                 profit_loss = round(current_value - total_paid, 2)
@@ -196,9 +206,9 @@ def lookup():
                 
                 row_count += 1
                 
-                
+
+    ###GUI build###            
     root.title('Crypto Currency Porfolio - Portfolio Current Value: ${0:.2f}'.format(float(total_current_value)))
-    
     
     portfolio_profits = Label(root, text='Portfolio P/L: ${0:.2f}'.format(float(portfolio_profit_loss)), font= 'Verdana 8 bold', fg=red_green(portfolio_profit_loss)) 
     portfolio_profits.grid(row=0, column = 0, sticky = W, padx=10, pady=10)
@@ -225,6 +235,7 @@ def lookup():
     input_purchase_price.get()
     input_purchase_price.insert(0, 'Enter purchase price')
 
+    #Adds crypto holdings to json file
     def add_crypto():
         my_portfolio = portfolio(path)
         dict_parse = []
@@ -247,9 +258,10 @@ def lookup():
     myButton = Button(root, text='Add to list', command=add_crypto)
     myButton.grid(row=0, column=8, columnspan = 2, sticky = W+S, padx = 3, pady = 10)
     
-    
+    #generates randomize greens or red for chart colors
     color_list = colors_defined(value)
 
+    #Pie chart build
     def pie(name_list, size, color_list):
         # Data to plot
         labels = name_list
@@ -270,6 +282,7 @@ def lookup():
  
     pie(sym_list, size, color_list)
     
+    #bar chart build
     def bar(name_list, size, color_list):
         # Data to plot
         objects = name_list
@@ -283,7 +296,7 @@ def lookup():
         plt.bar(objects, y, align='center', color = color_list)
         
         plt.set_xticklabels(objects, fontsize=9, rotation = 45)
-        plt.set_yticklabels(x_ticks(size),fontsize=9)
+        plt.set_yticklabels(y_ticks(size),fontsize=9)
 
         fig.suptitle('Current Value per Coin ($)', fontsize=10)
         
@@ -295,6 +308,7 @@ def lookup():
  
     bar(sym_list, size, color_list)
     
+    #bar chart build
     def bar_pl(name_list, value, color_list):
         # Data to plot
         objects = name_list
@@ -308,8 +322,8 @@ def lookup():
         
         plt.set_xticklabels(objects, fontsize=9, rotation = 45)
         plt.axhline(0, color='black')
-        plt.set_yticks(x_ticks_pl(value))
-        plt.set_yticklabels(x_ticks_pl(value),fontsize=9)
+        plt.set_yticks(y_ticks_pl(value))
+        plt.set_yticklabels(y_ticks_pl(value),fontsize=9)
 
         fig.suptitle('Current P/L per Coin ($)', fontsize=10)
         
@@ -321,7 +335,7 @@ def lookup():
  
     bar_pl(sym_list, value, color_list)
     print(value)
-    print(x_ticks_pl(value))
+    print(y_ticks_pl(value))
     print(sym_list)
     
 lookup()
